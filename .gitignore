@@ -1,0 +1,23 @@
+*.log
+*.pot
+*.pyc
+__pycache__/
+local_settings.py
+db.sqlite3
+media/
+.env
+.flake8
+.pytest_cache/
+.idea/
+
+
+# pyenv
+.python-version
+
+# celery beat schedule file
+celerybeat-schedule
+
+# virtualenv
+.venv
+venv/
+ENV/
