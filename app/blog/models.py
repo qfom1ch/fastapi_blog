@@ -6,7 +6,6 @@ from sqlalchemy.sql.schema import Column, ForeignKey
 from db.session import Base
 
 
-
 class Post(Base):
     __tablename__: str = "posts"
 
