@@ -1,11 +1,13 @@
 from typing import Union
 
+from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.user.schemas import UserCreate, ShowUser
 from app.user.models import User
 
 from sqlalchemy import update, and_, select
+from . import security
 
 
 async def _get_user_by_id(user_id: int, db_session: AsyncSession) -> Union[User, None]:
@@ -32,11 +34,18 @@ async def _get_user_by_username(username: str, db_session: AsyncSession) -> Unio
         return user_row[0]
 
 
+async def _get_users(db_session: AsyncSession) -> list:
+    query = select(User)
+    res = await db_session.execute(query)
+    list_users = [user[0] for user in res.fetchall()]
+    return list_users
+
+
 async def _create_user(user: UserCreate, db_session: AsyncSession) -> ShowUser:
     new_user = User(
         username=user.username,
         email=user.email,
-        hashed_password=user.password,
+        hashed_password=security.get_hash_password(user.password),
     )
     db_session.add(new_user)
     await db_session.flush()
@@ -86,3 +95,22 @@ async def _delete_user(user_id: int, db_session: AsyncSession) -> Union[int, Non
     deleted_user_id_row = res.fetchone()
     if deleted_user_id_row is not None:
         return deleted_user_id_row[0]
+
+
+def _check_user_permissions(target_user: User, current_user: User) -> bool:
+    if current_user.id == target_user.id:
+        if current_user.is_superuser:
+            raise HTTPException(
+                status_code=status.HTTP_406_NOT_ACCEPTABLE, detail="Superadmin cannot be deleted via API."
+            )
+    if current_user.id != target_user.id:
+        if not current_user.is_admin and not current_user.is_superuser:
+            return False
+        if current_user.is_superuser and target_user.is_superuser:
+            return False
+        if (current_user.is_admin and not current_user.is_superuser) \
+                and (target_user.is_admin and not target_user.is_superuser):
+            return False
+        if (current_user.is_admin and not current_user.is_superuser) and target_user.is_superuser:
+            return False
+    return True

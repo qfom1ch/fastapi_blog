@@ -70,3 +70,8 @@ class UpdatedUserResponse(BaseModel):
 
 class DeleteUserResponse(BaseModel):
     deleted_user_id: int
+
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
