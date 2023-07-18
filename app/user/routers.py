@@ -5,6 +5,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import Depends
 from fastapi import status
+
 from . import security
 from app.user.models import User
 from app.user.security import authenticate_user, create_access_token
@@ -22,6 +23,8 @@ from app.user.services import (_create_user,
                                _check_duplicate_username,
                                _get_users,
                                _check_user_permissions)
+from ..blog.schemas import ShowPost
+from ..blog.services import _get_posts_by_user_id
 
 user_router = APIRouter(
     prefix='/users',
@@ -56,14 +59,21 @@ async def list_users(db_session: AsyncSession = Depends(get_db)):
     return paginate(users)
 
 
+@user_router.get("/me/posts", response_model=Page[ShowPost], tags=['Users'])
+async def get_own_posts(current_user: User = Depends(security.get_current_user_from_token),
+                        db_session: AsyncSession = Depends(get_db)) -> Page[ShowPost]:
+    user_id = current_user.id
+    user_posts = await _get_posts_by_user_id(user_id, db_session)
+    return paginate(user_posts)
+
+
 @user_router.post("/", response_model=ShowUser, tags=['Users'])
 async def create_user(user: UserCreate, db_session: AsyncSession = Depends(get_db)) -> ShowUser:
-    user_data = user.model_dump()
-    if await _check_duplicate_email(user_data['email'], db_session):
+    if await _check_duplicate_email(user.email, db_session):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT, detail='This email is already registered'
         )
-    if await _check_duplicate_username(user_data['username'], db_session):
+    if await _check_duplicate_username(user.username, db_session):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT, detail='This username is already registered'
         )
@@ -121,7 +131,7 @@ async def delete_user(user_id: int, db_session: AsyncSession = Depends(get_db),
     return DeleteUserResponse(deleted_user_id=deleted_user_id)
 
 
-@user_router.patch("/give_admin_privileges", response_model=ShowUser, tags=['Privileges'])
+@user_router.patch("/give_admin_privileges", response_model=ShowUser, tags=['Users privileges'])
 async def add_admin_privilege(
         user_id: int,
         db_session: AsyncSession = Depends(get_db),
@@ -150,7 +160,7 @@ async def add_admin_privilege(
     return updated_user
 
 
-@user_router.delete("/remove_admin_privileges", response_model=ShowUser, tags=['Privileges'])
+@user_router.delete("/remove_admin_privileges", response_model=ShowUser, tags=['Users privileges'])
 async def remove_admin_privilege(
         user_id: int,
         db_session: AsyncSession = Depends(get_db),

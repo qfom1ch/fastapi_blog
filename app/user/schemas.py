@@ -6,20 +6,16 @@ from pydantic import EmailStr
 from pydantic import field_validator
 
 
-class TunedModel(BaseModel):
-    class Config:
-        """tells pydantic to convert even non dict obj to json"""
-
-        from_attributes = True
-
-
-class ShowUser(TunedModel):
+class ShowUser(BaseModel):
     id: int
     username: str
     email: EmailStr
     is_active: bool
     is_admin: bool
     is_superuser: bool
+
+    class Config:
+        from_attributes = True
 
 
 class UserCreate(BaseModel):
@@ -28,14 +24,14 @@ class UserCreate(BaseModel):
     password: str
 
     @field_validator("username")
-    def validate_username(cls: Any, username: str, **kwargs: Any) -> Any:
+    def validate_username(cls, username: str):
         if len(username) <= 4:
             raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                                 detail="Username must be more than 4 characters")
         return username
 
     @field_validator("email")
-    def validate_email(cls: Any, email: str, **kwargs: Any) -> Any:
+    def validate_email(cls, email: str):
         if len(email) == 0:
             raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                                 detail="An email is required")
@@ -67,9 +63,15 @@ class UpdatedUserResponse(BaseModel):
     username: str
     email: EmailStr
 
+    class Config:
+        from_attributes = True
+
 
 class DeleteUserResponse(BaseModel):
     deleted_user_id: int
+
+    class Config:
+        from_attributes = True
 
 
 class Token(BaseModel):

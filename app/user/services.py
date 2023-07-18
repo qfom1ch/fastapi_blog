@@ -52,21 +52,21 @@ async def _create_user(user: UserCreate, db_session: AsyncSession) -> ShowUser:
     return new_user
 
 
-async def _check_duplicate_email(user_email: dict, db_session: AsyncSession) -> bool:
+async def _check_duplicate_email(user_email: str, db_session: AsyncSession) -> bool:
     stmt = select(User.email).where(User.email == user_email).exists()
     res = await db_session.execute(stmt.select())
     res_row = res.fetchone()
     return res_row[0]
 
 
-async def _check_duplicate_username(user_username: dict, db_session: AsyncSession) -> bool:
+async def _check_duplicate_username(user_username: str, db_session: AsyncSession) -> bool:
     stmt = select(User.username).where(User.username == user_username).exists()
     res = await db_session.execute(stmt.select())
     res_row = res.fetchone()
     return res_row[0]
 
 
-async def _update_user(user_id: id,
+async def _update_user(user_id: int,
                        updated_user_params: dict,
                        db_session: AsyncSession) -> Union[User, None]:
     if updated_user_params.get('password'):

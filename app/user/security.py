@@ -49,7 +49,7 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
 
 
 async def get_current_user_from_token(
-    token: str = Depends(oauth2_scheme), db_session: AsyncSession = Depends(get_db)
+        token: str = Depends(oauth2_scheme), db_session: AsyncSession = Depends(get_db)
 ):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
