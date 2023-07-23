@@ -1,5 +1,7 @@
 import json
+
 import pytest
+
 from tests.conftest import create_test_auth_headers_for_user
 
 
@@ -110,4 +112,4 @@ async def test_update_user_duplicate_data_error(client,
         headers=create_test_auth_headers_for_user(user_data1["username"]),
     )
     assert resp.status_code == 409
-    assert (resp.json() == expected_detail)
+    assert resp.json() == expected_detail

@@ -1,30 +1,27 @@
 from datetime import timedelta
 
-from fastapi import APIRouter, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 from fastapi.security import OAuth2PasswordRequestForm
+from fastapi_pagination import Page, paginate
 from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi import Depends
-from fastapi import status
 
-from . import security
 from app.user.models import User
+from app.user.schemas import (DeleteUserResponse, ShowUser, Token,
+                              UpdatedUserResponse, UpdateUserRequest,
+                              UserCreate)
 from app.user.security import authenticate_user, create_access_token
+from app.user.services import (_check_duplicate_email,
+                               _check_duplicate_username,
+                               _check_user_permissions, _create_user,
+                               _delete_user, _get_user_by_email,
+                               _get_user_by_id, _get_user_by_username,
+                               _get_users, _update_user)
 from config import ACCESS_TOKEN_EXPIRE_MINUTES
 from db.session import get_db
-from fastapi_pagination import Page, paginate
-from app.user.schemas import UserCreate, ShowUser, DeleteUserResponse, UpdateUserRequest, UpdatedUserResponse, Token
-from app.user.services import (_create_user,
-                               _delete_user,
-                               _get_user_by_id,
-                               _get_user_by_email,
-                               _get_user_by_username,
-                               _update_user,
-                               _check_duplicate_email,
-                               _check_duplicate_username,
-                               _get_users,
-                               _check_user_permissions)
+
 from ..blog.schemas import ShowPost
 from ..blog.services import _get_posts_by_user_id
+from . import security
 
 user_router = APIRouter(
     prefix='/users',
@@ -44,11 +41,11 @@ async def get_user(user_id: int = None,
         user = await _get_user_by_username(username, db_session)
     else:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail=f"Not enough data."
+            status_code=status.HTTP_404_NOT_FOUND, detail="Not enough data."
         )
     if user is None:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail=f"User not found."
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found."
         )
     return user
 
@@ -60,22 +57,26 @@ async def list_users(db_session: AsyncSession = Depends(get_db)):
 
 
 @user_router.get("/me/posts", response_model=Page[ShowPost], tags=['Users'])
-async def get_own_posts(current_user: User = Depends(security.get_current_user_from_token),
-                        db_session: AsyncSession = Depends(get_db)) -> Page[ShowPost]:
+async def get_own_posts(
+        current_user: User = Depends(security.get_current_user_from_token),
+        db_session: AsyncSession = Depends(get_db)) -> Page[ShowPost]:
     user_id = current_user.id
     user_posts = await _get_posts_by_user_id(user_id, db_session)
     return paginate(user_posts)
 
 
 @user_router.post("/", response_model=ShowUser, tags=['Users'])
-async def create_user(user: UserCreate, db_session: AsyncSession = Depends(get_db)) -> ShowUser:
+async def create_user(user: UserCreate,
+                      db_session: AsyncSession = Depends(get_db)) -> ShowUser:
     if await _check_duplicate_email(user.email, db_session):
         raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT, detail='This email is already registered'
+            status_code=status.HTTP_409_CONFLICT,
+            detail='This email is already registered'
         )
     if await _check_duplicate_username(user.username, db_session):
         raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT, detail='This username is already registered'
+            status_code=status.HTTP_409_CONFLICT,
+            detail='This username is already registered'
         )
     return await _create_user(user, db_session)
 
@@ -84,74 +85,96 @@ async def create_user(user: UserCreate, db_session: AsyncSession = Depends(get_d
 async def update_user_by_id(user_id: int,
                             data_to_update: UpdateUserRequest,
                             db_session: AsyncSession = Depends(get_db),
-                            current_user: User = Depends(security.get_current_user_from_token)) -> UpdatedUserResponse:
+                            current_user:
+                            User =
+                            Depends(security.get_current_user_from_token)) \
+        -> UpdatedUserResponse:
     updated_user_params = data_to_update.model_dump(exclude_none=True)
     if updated_user_params == {}:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="At least one parameter for user update info should be provided",
+            detail=("At least one parameter for user update"
+                    " info should be provided"),
         )
     if updated_user_params.get('email'):
-        if await _check_duplicate_email(updated_user_params['email'], db_session):
+        if await _check_duplicate_email(updated_user_params['email'],
+                                        db_session):
             raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT, detail='This email is already registered'
+                status_code=status.HTTP_409_CONFLICT,
+                detail='This email is already registered'
             )
     if updated_user_params.get('username'):
-        if await _check_duplicate_username(updated_user_params['username'], db_session):
+        if await _check_duplicate_username(updated_user_params['username'],
+                                           db_session):
             raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT, detail='This username is already registered'
+                status_code=status.HTTP_409_CONFLICT,
+                detail='This username is already registered'
             )
     user_for_update = await _get_user_by_id(user_id, db_session)
     if user_for_update is None:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail=f"User with id {user_id} not found."
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"User with id {user_id} not found."
         )
     if user_id != current_user.id:
-        if not _check_user_permissions(target_user=user_for_update, current_user=current_user):
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden.")
+        if not _check_user_permissions(target_user=user_for_update,
+                                       current_user=current_user):
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
+                                detail="Forbidden.")
     updated_user = await _update_user(user_id, updated_user_params, db_session)
     return updated_user
 
 
 @user_router.delete("/", response_model=DeleteUserResponse, tags=['Users'])
-async def delete_user(user_id: int, db_session: AsyncSession = Depends(get_db),
-                      current_user: User = Depends(security.get_current_user_from_token)) -> DeleteUserResponse:
+async def delete_user(user_id: int,
+                      db_session: AsyncSession = Depends(get_db),
+                      current_user:
+                      User = Depends(security.get_current_user_from_token)) \
+        -> DeleteUserResponse:
     user_for_deletion = await _get_user_by_id(user_id, db_session)
     if user_for_deletion is None:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail=f"User with id {user_id} not found."
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"User with id {user_id} not found."
         )
     if not _check_user_permissions(user_for_deletion, current_user):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden.")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
+                            detail="Forbidden.")
     deleted_user_id = await _delete_user(user_id, db_session)
     if deleted_user_id is None:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail=f"User with id {user_id} not found."
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"User with id {user_id} not found."
         )
     return DeleteUserResponse(deleted_user_id=deleted_user_id)
 
 
-@user_router.patch("/give_admin_privileges", response_model=ShowUser, tags=['Users privileges'])
+@user_router.patch("/give_admin_privileges", response_model=ShowUser,
+                   tags=['Users privileges'])
 async def add_admin_privilege(
         user_id: int,
         db_session: AsyncSession = Depends(get_db),
         current_user: User = Depends(security.get_current_user_from_token),
 ):
     if not current_user.is_superuser:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden.")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
+                            detail="Forbidden.")
     if current_user.id == user_id:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Cannot manage privileges of itself."
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot manage privileges of itself."
         )
     user_for_promotion = await _get_user_by_id(user_id, db_session)
     if user_for_promotion.is_admin or user_for_promotion.is_superuser:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail=f"User with id {user_id} already promoted to admin / superadmin.",
+            detail=(f"User with id {user_id} "
+                    "already promoted to admin / superadmin."),
         )
     if user_for_promotion is None:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail=f"User with id {user_id} not found."
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"User with id {user_id} not found."
         )
     updated_user_params = {"is_admin": True}
     updated_user = await _update_user(user_id,
@@ -160,23 +183,26 @@ async def add_admin_privilege(
     return updated_user
 
 
-@user_router.delete("/remove_admin_privileges", response_model=ShowUser, tags=['Users privileges'])
+@user_router.delete("/remove_admin_privileges", response_model=ShowUser,
+                    tags=['Users privileges'])
 async def remove_admin_privilege(
         user_id: int,
         db_session: AsyncSession = Depends(get_db),
         current_user: User = Depends(security.get_current_user_from_token),
 ):
     if not current_user.is_superuser:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden.")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
+                            detail="Forbidden.")
     if current_user.id == user_id:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Cannot manage privileges of itself."
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot manage privileges of itself."
         )
     user_for_downgrade = await _get_user_by_id(user_id, db_session)
     if user_for_downgrade.is_superuser:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail=f"Superuser privileges cannot be changed",
+            detail="Superuser privileges cannot be changed",
         )
 
     if not user_for_downgrade.is_admin:
@@ -186,7 +212,8 @@ async def remove_admin_privilege(
         )
     if user_for_downgrade is None:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail=f"User with id {user_id} not found."
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"User with id {user_id} not found."
         )
     updated_user_params = {"is_admin": False}
     updated_user = await _update_user(user_id,
@@ -197,9 +224,11 @@ async def remove_admin_privilege(
 
 @user_router.post("/token", response_model=Token, tags=["Login"])
 async def login_for_access_token(response: Response,
-                                 form_data: OAuth2PasswordRequestForm = Depends(),
+                                 form_data: OAuth2PasswordRequestForm =
+                                 Depends(),
                                  db_session: AsyncSession = Depends(get_db)):
-    user = await authenticate_user(form_data.username, form_data.password, db_session)
+    user = await authenticate_user(form_data.username, form_data.password,
+                                   db_session)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

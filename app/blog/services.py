@@ -1,15 +1,17 @@
 from datetime import datetime
 from typing import Union
 
-from sqlalchemy import select, update, delete, func
-from sqlalchemy.ext.asyncio import AsyncSession
 from slugify import slugify
+from sqlalchemy import delete, select, update
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.blog.models import Post
 from app.blog.schemas import PostCreate, ShowPost
 from app.user.models import User
 
 
-async def _create_post(post: PostCreate, db_session: AsyncSession, current_user: User) -> ShowPost:
+async def _create_post(post: PostCreate, db_session: AsyncSession,
+                       current_user: User) -> ShowPost:
     new_post = Post(
         title=post.title,
         short_description=post.short_description,
@@ -23,7 +25,8 @@ async def _create_post(post: PostCreate, db_session: AsyncSession, current_user:
     return new_post
 
 
-async def _get_post_by_id(post_id: int, db_session: AsyncSession) -> Union[User, None]:
+async def _get_post_by_id(post_id: int, db_session: AsyncSession) \
+        -> Union[User, None]:
     query = select(Post).where(Post.id == post_id)
     res = await db_session.execute(query)
     post_row = res.fetchone()
@@ -31,7 +34,8 @@ async def _get_post_by_id(post_id: int, db_session: AsyncSession) -> Union[User,
         return post_row[0]
 
 
-async def _get_post_by_slug(post_slug: str, db_session: AsyncSession) -> Union[User, None]:
+async def _get_post_by_slug(post_slug: str, db_session: AsyncSession) \
+        -> Union[User, None]:
     query = select(Post).where(Post.slug == post_slug)
     res = await db_session.execute(query)
     post_row = res.fetchone()
@@ -39,7 +43,8 @@ async def _get_post_by_slug(post_slug: str, db_session: AsyncSession) -> Union[U
         return post_row[0]
 
 
-async def _get_post_by_title(post_title: str, db_session: AsyncSession) -> Union[User, None]:
+async def _get_post_by_title(post_title: str, db_session: AsyncSession) \
+        -> Union[User, None]:
     query = select(Post).where(Post.title == post_title)
     res = await db_session.execute(query)
     post_row = res.fetchone()
@@ -47,7 +52,8 @@ async def _get_post_by_title(post_title: str, db_session: AsyncSession) -> Union
         return post_row[0]
 
 
-async def _get_posts_by_user_id(user_id: int, db_session: AsyncSession) -> list:
+async def _get_posts_by_user_id(user_id: int,
+                                db_session: AsyncSession) -> list:
     query = select(Post).where(Post.author_id == user_id)
     res = await db_session.execute(query)
     user_posts = [post[0] for post in res.fetchall()]
@@ -64,6 +70,8 @@ async def _get_all_posts(db_session: AsyncSession) -> list:
 async def _update_post(post_id: int,
                        updated_post_params: dict,
                        db_session: AsyncSession) -> Union[Post, None]:
+    if updated_post_params.get('title'):
+        updated_post_params['slug'] = slugify(updated_post_params['title'])
     query = (
         update(Post)
         .where(Post.id == post_id)

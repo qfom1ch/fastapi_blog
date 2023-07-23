@@ -1,19 +1,17 @@
 import asyncio
-from datetime import timedelta, datetime
+from datetime import datetime, timedelta
+from typing import Any, Generator
 
-import pytest
-
-from starlette.testclient import TestClient
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.ext.asyncio import create_async_engine
-from sqlalchemy.orm import sessionmaker
-from app.user.security import create_access_token
-from config import TEST_DATABASE_URL, ACCESS_TOKEN_EXPIRE_MINUTES
-from typing import Generator, Any
 import asyncpg
-from db.session import get_db
+import pytest
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+from sqlalchemy.orm import sessionmaker
+from starlette.testclient import TestClient
+
+from app.user.security import create_access_token
+from config import ACCESS_TOKEN_EXPIRE_MINUTES, TEST_DATABASE_URL
+from db.session import Base, get_db
 from main import app
-from db.session import Base
 
 CLEAN_TABLES = [
     "posts",
@@ -99,6 +97,17 @@ async def get_user_from_database(asyncpg_pool):
             )
 
     return get_user_from_database_by_id
+
+
+@pytest.fixture
+async def get_post_from_database(asyncpg_pool):
+    async def get_post_from_database_by_id(post_id: str):
+        async with asyncpg_pool.acquire() as connection:
+            return await connection.fetch(
+                """SELECT * FROM posts WHERE id = $1;""", post_id
+            )
+
+    return get_post_from_database_by_id
 
 
 @pytest.fixture

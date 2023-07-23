@@ -2,9 +2,9 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi_pagination import add_pagination
 
-from config import APP_PORT
-from app.user.routers import user_router
 from app.blog.routers import post_router
+from app.user.routers import user_router
+from config import APP_PORT
 
 app = FastAPI(title='blog_app')
 

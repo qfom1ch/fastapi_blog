@@ -1,7 +1,6 @@
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict
-from pydantic import field_validator
+from pydantic import BaseModel, ConfigDict, field_validator
 
 
 class PostCreate(BaseModel):
@@ -42,7 +41,6 @@ class ShowPost(BaseModel):
     published_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
-
 
 
 class UpdatePostRequest(BaseModel):

@@ -1,9 +1,5 @@
-from typing import Any
-
 from fastapi import HTTPException, status
-from pydantic import BaseModel, ConfigDict
-from pydantic import EmailStr
-from pydantic import field_validator
+from pydantic import BaseModel, ConfigDict, EmailStr, field_validator
 
 
 class ShowUser(BaseModel):
@@ -25,10 +21,10 @@ class UserCreate(BaseModel):
     @field_validator("username")
     def validate_username(cls, username: str):
         if len(username) <= 4:
-            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                                detail="Username must be more than 4 characters")
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Username must be more than 4 characters")
         return username
-
 
 
 class UpdateUserRequest(BaseModel):
@@ -39,15 +35,17 @@ class UpdateUserRequest(BaseModel):
     @field_validator("username")
     def validate_username(cls, username: str):
         if len(username) <= 4:
-            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                                detail="Username must be more than 4 characters")
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Username must be more than 4 characters")
         return username
 
     @field_validator("email")
     def validate_email(cls, email: str):
         if len(email) == 0:
-            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                                detail="An email is required")
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="An email is required")
         return email
 
 

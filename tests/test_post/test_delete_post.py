@@ -1,9 +1,14 @@
+import datetime
+
 import pytest
 
 from tests.conftest import create_test_auth_headers_for_user
 
 
-async def test_delete_user(client, create_user_in_database, get_user_from_database):
+async def test_delete_post(client,
+                           create_user_in_database,
+                           create_post_in_database,
+                           get_post_from_database):
     user_data = {
         "id": 1,
         "username": "Serega",
@@ -13,24 +18,30 @@ async def test_delete_user(client, create_user_in_database, get_user_from_databa
         "is_admin": False,
         "is_superuser": False,
     }
+    post_data = {
+        "id": 1,
+        "author_id": user_data["id"],
+        "slug": "someslug",
+        "title": "sometitle",
+        "text": "some_text",
+        "short_description": "some_description",
+        "published_at": datetime.date(2023, 5, 15),
+    }
     await create_user_in_database(**user_data)
+    await create_post_in_database(**post_data)
     resp = client.delete(
-        f"/users/?user_id={user_data['id']}",
+        f"/posts/?post_id={post_data['id']}",
         headers=create_test_auth_headers_for_user(user_data["username"]),
     )
     assert resp.status_code == 200
-    assert resp.json() == {"deleted_user_id": user_data["id"]}
-    users_from_db = await get_user_from_database(user_data["id"])
-    user_from_db = dict(users_from_db[0])
-    assert user_from_db["username"] == user_data["username"]
-    assert user_from_db["email"] == user_data["email"]
-    assert user_from_db["is_active"] is False
-    assert user_from_db["is_admin"] is False
-    assert user_from_db["is_superuser"] is False
-    assert user_from_db["id"] == user_data["id"]
+    posts_from_db = await get_post_from_database(post_data["id"])
+    assert len(posts_from_db) == 0
 
 
-async def test_delete_user_no_jwt(client, create_user_in_database):
+async def test_delete_post_no_jwt(client,
+                                  create_user_in_database,
+                                  create_post_in_database,
+                                  get_post_from_database):
     user_data = {
         "id": 1,
         "username": "Serega",
@@ -40,10 +51,18 @@ async def test_delete_user_no_jwt(client, create_user_in_database):
         "is_admin": False,
         "is_superuser": False,
     }
+    post_data = {
+        "id": 1,
+        "author_id": user_data["id"],
+        "slug": "someslug",
+        "title": "sometitle",
+        "text": "some_text",
+        "short_description": "some_description",
+        "published_at": datetime.date(2023, 5, 15),
+    }
     await create_user_in_database(**user_data)
-    resp = client.delete(
-        f"/users/?user_id={user_data['id']}",
-    )
+    await create_post_in_database(**post_data)
+    resp = client.delete(f"/posts/?post_id={post_data['id']}")
     assert resp.status_code == 401
     assert resp.json() == {"detail": "Not authenticated"}
 
@@ -113,41 +132,27 @@ async def test_delete_user_no_jwt(client, create_user_in_database):
         ),
     ],
 )
-async def test_delete_another_user_error(
+async def test_delete_post_by_another_user_error(
         client,
         create_user_in_database,
         user_for_deletion,
         user_who_delete,
+        create_post_in_database,
 ):
-    await create_user_in_database(**user_for_deletion)
-    await create_user_in_database(**user_who_delete)
+    post_data = {
+        "id": 1,
+        "author_id": user_for_deletion["id"],
+        "slug": "someslug",
+        "title": "sometitle",
+        "text": "some_text",
+        "short_description": "some_description",
+        "published_at": datetime.date(2023, 5, 15),
+    }
+    for user_data in [user_for_deletion, user_who_delete]:
+        await create_user_in_database(**user_data)
+    await create_post_in_database(**post_data)
     resp = client.delete(
-        f"/users/?user_id={user_for_deletion['id']}",
+        f"/posts/?post_id={post_data['id']}",
         headers=create_test_auth_headers_for_user(user_who_delete["username"]),
     )
     assert resp.status_code == 403
-
-
-async def test_reject_delete_superadmin(
-        client,
-        create_user_in_database,
-        get_user_from_database,
-):
-    user_for_deletion = {
-        "id": 1,
-        "username": "Serega",
-        "email": "lol@kek.com",
-        "is_active": True,
-        "hashed_password": "SampleHashedPass",
-        "is_admin": False,
-        "is_superuser": True,
-    }
-    await create_user_in_database(**user_for_deletion)
-    resp = client.delete(
-        f"/users/?user_id={user_for_deletion['id']}",
-        headers=create_test_auth_headers_for_user(user_for_deletion["username"]),
-    )
-    assert resp.status_code == 406
-    assert resp.json() == {"detail": "Superadmin cannot be deleted via API."}
-    user_from_database = await get_user_from_database(user_for_deletion["id"])
-    assert dict(user_from_database[0])["is_superuser"] is True

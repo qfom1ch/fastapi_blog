@@ -86,7 +86,7 @@ async def test_get_user_not_found(client,
     assert resp.json() == {"detail": "User not found."}
 
 
-async def test_get_users_list(client, create_user_in_database):
+async def test_get_all_users_list(client, create_user_in_database):
     user_data1 = {
         "id": 1,
         "username": "Serega",
@@ -105,8 +105,8 @@ async def test_get_users_list(client, create_user_in_database):
         "is_admin": True,
         "is_superuser": False,
     }
-    await create_user_in_database(**user_data1)
-    await create_user_in_database(**user_data2)
+    for user_data in [user_data1, user_data2]:
+        await create_user_in_database(**user_data)
     resp = client.get("/users/list")
     assert resp.status_code == 200
     assert resp.json() == \

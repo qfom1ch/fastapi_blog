@@ -1,0 +1,17 @@
+[flake8]
+exclude =
+  .bzr
+  .git
+  .hg
+  .svn
+  .tox
+  CVS
+  .venv*/
+  venv*/
+  target
+  __pycache__
+  deployments
+  tests
+  migrations/*
+  base.py
+  __init__.py
