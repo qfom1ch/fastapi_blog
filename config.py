@@ -18,3 +18,12 @@ TEST_DATABASE_URL = env.str(
     default=("postgresql+asyncpg://"
              "postgres_test:postgres_test@0.0.0.0:5632/postgres_test"),
 )
+
+REDIS_HOST = env.str("REDIS_HOST", default="localhost")
+REDIS_PORT = env.int("REDIS_PORT", default=6379)
+
+
+SMTP_HOST = env.str("SMTP_HOST", default="smtp.gmail.com")
+SMTP_PORT = env.int("SMTP_PORT", default=465)
+SMTP_USER = env.str("SMTP_USER", default="fomichev.ser.v@gmail.com")
+SMTP_PASSWORD = env.str("SMTP_PASSWORD", default="awtiwpicfgdztfxi")

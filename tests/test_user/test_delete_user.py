@@ -3,7 +3,9 @@ import pytest
 from tests.conftest import create_test_auth_headers_for_user
 
 
-async def test_delete_user(client, create_user_in_database, get_user_from_database):
+async def test_delete_user(client,
+                           create_user_in_database,
+                           get_user_from_database):
     user_data = {
         "id": 1,
         "username": "Serega",
@@ -12,6 +14,7 @@ async def test_delete_user(client, create_user_in_database, get_user_from_databa
         "hashed_password": "SampleHashedPass",
         "is_admin": False,
         "is_superuser": False,
+        "is_verified_email": False,
     }
     await create_user_in_database(**user_data)
     resp = client.delete(
@@ -27,6 +30,7 @@ async def test_delete_user(client, create_user_in_database, get_user_from_databa
     assert user_from_db["is_active"] is False
     assert user_from_db["is_admin"] is False
     assert user_from_db["is_superuser"] is False
+    assert user_from_db["is_verified_email"] is False
     assert user_from_db["id"] == user_data["id"]
 
 
@@ -39,6 +43,7 @@ async def test_delete_user_no_jwt(client, create_user_in_database):
         "hashed_password": "SampleHashedPass",
         "is_admin": False,
         "is_superuser": False,
+        "is_verified_email": False,
     }
     await create_user_in_database(**user_data)
     resp = client.delete(
@@ -60,6 +65,7 @@ async def test_delete_user_no_jwt(client, create_user_in_database):
                     "hashed_password": "SampleHashedPass",
                     "is_admin": False,
                     "is_superuser": False,
+                    "is_verified_email": False,
                 },
                 {
                     "id": 2,
@@ -69,6 +75,7 @@ async def test_delete_user_no_jwt(client, create_user_in_database):
                     "hashed_password": "SampleHashedPass",
                     "is_admin": False,
                     "is_superuser": False,
+                    "is_verified_email": False,
                 },
         ),
         (
@@ -80,6 +87,7 @@ async def test_delete_user_no_jwt(client, create_user_in_database):
                     "hashed_password": "SampleHashedPass",
                     "is_admin": False,
                     "is_superuser": True,
+                    "is_verified_email": True,
                 },
                 {
                     "id": 2,
@@ -89,6 +97,7 @@ async def test_delete_user_no_jwt(client, create_user_in_database):
                     "hashed_password": "SampleHashedPass",
                     "is_admin": True,
                     "is_superuser": False,
+                    "is_verified_email": False,
                 },
         ),
         (
@@ -100,6 +109,7 @@ async def test_delete_user_no_jwt(client, create_user_in_database):
                     "hashed_password": "SampleHashedPass",
                     "is_admin": True,
                     "is_superuser": False,
+                    "is_verified_email": False,
                 },
                 {
                     "id": 2,
@@ -109,6 +119,7 @@ async def test_delete_user_no_jwt(client, create_user_in_database):
                     "hashed_password": "SampleHashedPass",
                     "is_admin": True,
                     "is_superuser": False,
+                    "is_verified_email": False,
                 },
         ),
     ],
@@ -141,11 +152,13 @@ async def test_reject_delete_superadmin(
         "hashed_password": "SampleHashedPass",
         "is_admin": False,
         "is_superuser": True,
+        "is_verified_email": False,
     }
     await create_user_in_database(**user_for_deletion)
     resp = client.delete(
         f"/users/?user_id={user_for_deletion['id']}",
-        headers=create_test_auth_headers_for_user(user_for_deletion["username"]),
+        headers=create_test_auth_headers_for_user(
+            user_for_deletion["username"]),
     )
     assert resp.status_code == 406
     assert resp.json() == {"detail": "Superadmin cannot be deleted via API."}

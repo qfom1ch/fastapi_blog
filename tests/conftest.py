@@ -6,6 +6,7 @@ import asyncpg
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.sql import text
 from starlette.testclient import TestClient
 
 from app.user.security import create_access_token
@@ -28,14 +29,19 @@ def event_loop():
 
 @pytest.fixture(scope="session", autouse=True)
 async def async_test_engine():
-    async_test_engine = create_async_engine(TEST_DATABASE_URL, future=True, echo=False,
-                                            execution_options={"isolation_level": "AUTOCOMMIT"})
+    async_test_engine = create_async_engine(TEST_DATABASE_URL,
+                                            future=True,
+                                            echo=False,
+                                            execution_options={
+                                                "isolation_level":
+                                                    "AUTOCOMMIT"})
     yield async_test_engine
 
 
 @pytest.fixture(scope="session", autouse=True)
 async def async_session_test(async_test_engine):
-    async_session = sessionmaker(bind=async_test_engine, expire_on_commit=False, class_=AsyncSession)
+    async_session = sessionmaker(bind=async_test_engine,
+                                 expire_on_commit=False, class_=AsyncSession)
     yield async_session
 
 
@@ -48,24 +54,29 @@ async def prepare_database(async_test_engine):
         await conn.run_sync(Base.metadata.drop_all)
 
 
-from sqlalchemy.sql import text
-
-
 @pytest.fixture(scope="function", autouse=True)
 async def clean_tables(async_session_test):
     """Clean data in all tables before running test function"""
     async with async_session_test() as session:
         async with session.begin():
             for table_for_cleaning in CLEAN_TABLES:
-                await session.execute(text(f"""DELETE FROM {table_for_cleaning};"""))
+                await session.execute(
+                    text(f"DELETE FROM {table_for_cleaning};"))
 
 
 async def get_test_db() -> Generator:
     try:
-        async_test_engine = create_async_engine(TEST_DATABASE_URL, future=True, echo=False,
-                                                execution_options={"isolation_level": "AUTOCOMMIT"})
+        async_test_engine = create_async_engine(TEST_DATABASE_URL,
+                                                future=True,
+                                                echo=False,
+                                                execution_options={
+                                                    "isolation_level":
+                                                        "AUTOCOMMIT"}
+                                                )
 
-        async_test_session = sessionmaker(bind=async_test_engine, expire_on_commit=False, class_=AsyncSession)
+        async_test_session = sessionmaker(bind=async_test_engine,
+                                          expire_on_commit=False,
+                                          class_=AsyncSession)
         session: AsyncSession = async_test_session()
         yield session
     finally:
@@ -93,7 +104,7 @@ async def get_user_from_database(asyncpg_pool):
     async def get_user_from_database_by_id(user_id: str):
         async with asyncpg_pool.acquire() as connection:
             return await connection.fetch(
-                """SELECT * FROM users WHERE id = $1;""", user_id
+                "SELECT * FROM users WHERE id = $1;", user_id
             )
 
     return get_user_from_database_by_id
@@ -104,7 +115,7 @@ async def get_post_from_database(asyncpg_pool):
     async def get_post_from_database_by_id(post_id: str):
         async with asyncpg_pool.acquire() as connection:
             return await connection.fetch(
-                """SELECT * FROM posts WHERE id = $1;""", post_id
+                "SELECT * FROM posts WHERE id = $1;", post_id
             )
 
     return get_post_from_database_by_id
@@ -120,11 +131,12 @@ async def create_user_in_database(asyncpg_pool):
             hashed_password: str,
             is_admin: bool,
             is_superuser: bool,
+            is_verified_email: bool,
 
     ):
         async with asyncpg_pool.acquire() as connection:
             return await connection.execute(
-                """INSERT INTO users VALUES ($1, $2, $3, $4, $5, $6, $7)""",
+                "INSERT INTO users VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
                 id,
                 username,
                 email,
@@ -132,6 +144,7 @@ async def create_user_in_database(asyncpg_pool):
                 hashed_password,
                 is_admin,
                 is_superuser,
+                is_verified_email,
             )
 
     return create_user_in_database
@@ -151,7 +164,7 @@ async def create_post_in_database(asyncpg_pool):
     ):
         async with asyncpg_pool.acquire() as connection:
             return await connection.execute(
-                """INSERT INTO posts VALUES ($1, $2, $3, $4, $5, $6, $7)""",
+                "INSERT INTO posts VALUES ($1, $2, $3, $4, $5, $6, $7)",
                 id,
                 author_id,
                 slug,

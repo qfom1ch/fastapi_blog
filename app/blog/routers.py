@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fastapi_cache.decorator import cache
 from fastapi_pagination import Page, paginate
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -49,6 +50,7 @@ async def get_posts_by_user_id(user_id: int,
 
 
 @post_router.get("/list", response_model=Page[ShowPost], tags=['Posts'])
+@cache(expire=60)
 async def get_all_posts(db_session: AsyncSession = Depends(get_db)) \
         -> Page[ShowPost]:
     list_posts = await _get_all_posts(db_session)
@@ -95,7 +97,7 @@ async def update_post_by_id(post_id: int,
     return updated_post
 
 
-@post_router.delete("/", status_code=status.HTTP_204_NO_CONTENT,
+@post_router.delete("/", status_code=status.HTTP_200_OK,
                     tags=['Posts'])
 async def delete_post(
         post_id: int,

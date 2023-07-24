@@ -33,6 +33,7 @@ async def test_get_post(client,
         "hashed_password": "SampleHashedPass",
         "is_admin": False,
         "is_superuser": False,
+        "is_verified_email": False,
     }
     post_data = {
         "id": 1,
@@ -52,7 +53,8 @@ async def test_get_post(client,
     assert data_from_resp["author_id"] == user_data["id"]
     assert data_from_resp["title"] == post_data["title"]
     assert data_from_resp["text"] == post_data["text"]
-    assert data_from_resp["short_description"] == post_data["short_description"]
+    assert data_from_resp["short_description"] == \
+           post_data["short_description"]
     assert data_from_resp["slug"] == post_data["slug"]
 
 
@@ -86,6 +88,7 @@ async def test_get_post_not_found(client,
         "hashed_password": "SampleHashedPass",
         "is_admin": False,
         "is_superuser": False,
+        "is_verified_email": False,
     }
     post_data = {
         "id": 1,
@@ -114,6 +117,7 @@ async def test_get_all_posts_list(client,
         "hashed_password": "SampleHashedPass",
         "is_admin": False,
         "is_superuser": False,
+        "is_verified_email": False,
     }
     user_data2 = {
         "id": 2,
@@ -123,6 +127,7 @@ async def test_get_all_posts_list(client,
         "hashed_password": "SampleHashedPass",
         "is_admin": False,
         "is_superuser": False,
+        "is_verified_email": False,
     }
     post_data1 = {
         "id": 1,
@@ -187,6 +192,7 @@ async def test_get_posts_by_user_id(client,
         "hashed_password": "SampleHashedPass",
         "is_admin": False,
         "is_superuser": False,
+        "is_verified_email": False,
     }
     user_data2 = {
         "id": 2,
@@ -196,6 +202,7 @@ async def test_get_posts_by_user_id(client,
         "hashed_password": "SampleHashedPass",
         "is_admin": False,
         "is_superuser": False,
+        "is_verified_email": False,
     }
     post_data1 = {
         "id": 1,

@@ -2,6 +2,7 @@ from datetime import timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from fastapi.security import OAuth2PasswordRequestForm
+from fastapi_cache.decorator import cache
 from fastapi_pagination import Page, paginate
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -18,6 +19,7 @@ from app.user.services import (_check_duplicate_email,
                                _get_users, _update_user)
 from config import ACCESS_TOKEN_EXPIRE_MINUTES
 from db.session import get_db
+from tasks.tasks import send_email_for_verification
 
 from ..blog.schemas import ShowPost
 from ..blog.services import _get_posts_by_user_id
@@ -51,6 +53,7 @@ async def get_user(user_id: int = None,
 
 
 @user_router.get("/list", response_model=Page[ShowUser], tags=['Users'])
+@cache(expire=60)
 async def list_users(db_session: AsyncSession = Depends(get_db)):
     users = await _get_users(db_session)
     return paginate(users)
@@ -78,6 +81,7 @@ async def create_user(user: UserCreate,
             status_code=status.HTTP_409_CONFLICT,
             detail='This username is already registered'
         )
+    send_email_for_verification.delay(user.username, user.email)
     return await _create_user(user, db_session)
 
 
@@ -247,3 +251,16 @@ async def login_for_access_token(response: Response,
         httponly=True,
     )
     return token_data
+
+
+@user_router.get('/verification_email', tags=['Verification'])
+async def email_verification(token: str,
+                             db_session: AsyncSession = Depends(get_db)) \
+        -> dict:
+    user = await security.verify_token(token, db_session)
+    if not user:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+                            detail="Invalid token")
+    user_params = {"is_verified_email": True}
+    await _update_user(user.id, user_params, db_session)
+    return {"status_code": status.HTTP_200_OK, "success": True}

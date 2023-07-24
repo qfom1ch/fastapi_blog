@@ -35,6 +35,7 @@ async def test_get_user(client,
         "hashed_password": "SampleHashedPass",
         "is_admin": False,
         "is_superuser": False,
+        "is_verified_email": False,
     }
     await create_user_in_database(**user_data)
     resp = client.get(
@@ -47,6 +48,7 @@ async def test_get_user(client,
     assert user_from_response["is_active"] is True
     assert user_from_response["is_admin"] is False
     assert user_from_response["is_superuser"] is False
+    assert user_from_response["is_verified_email"] is False
 
 
 @pytest.mark.parametrize(
@@ -78,6 +80,7 @@ async def test_get_user_not_found(client,
         "hashed_password": "SampleHashedPass",
         "is_admin": False,
         "is_superuser": False,
+        "is_verified_email": False,
     }
     await create_user_in_database(**user_data)
     resp = client.get(
@@ -95,6 +98,7 @@ async def test_get_all_users_list(client, create_user_in_database):
         "hashed_password": "SampleHashedPass",
         "is_admin": False,
         "is_superuser": False,
+        "is_verified_email": False,
     }
     user_data2 = {
         "id": 2,
@@ -104,6 +108,7 @@ async def test_get_all_users_list(client, create_user_in_database):
         "hashed_password": "SampleHashedPass",
         "is_admin": True,
         "is_superuser": False,
+        "is_verified_email": False,
     }
     for user_data in [user_data1, user_data2]:
         await create_user_in_database(**user_data)
@@ -118,7 +123,8 @@ async def test_get_all_users_list(client, create_user_in_database):
                        "email": "lol@kek.com",
                        "is_active": True,
                        "is_admin": False,
-                       "is_superuser": False
+                       "is_superuser": False,
+                       "is_verified_email": False
                    },
                    {
                        "id": 2,
@@ -126,7 +132,8 @@ async def test_get_all_users_list(client, create_user_in_database):
                        "email": "kek@lol.com",
                        "is_active": True,
                        "is_admin": True,
-                       "is_superuser": False
+                       "is_superuser": False,
+                       "is_verified_email": False
                    }
                ],
                "total": 2,
@@ -147,6 +154,7 @@ async def test_get_users_me_posts(client,
         "hashed_password": "SampleHashedPass",
         "is_admin": False,
         "is_superuser": False,
+        "is_verified_email": False,
     }
     post_data1 = {
         "id": 1,
@@ -170,7 +178,8 @@ async def test_get_users_me_posts(client,
     await create_post_in_database(**post_data1)
     await create_post_in_database(**post_data2)
     resp = client.get("/users/me/posts",
-                      headers=create_test_auth_headers_for_user(user_data["username"]))
+                      headers=create_test_auth_headers_for_user(
+                          user_data["username"]))
     assert resp.status_code == 200
     assert resp.json() == {
         "items": [

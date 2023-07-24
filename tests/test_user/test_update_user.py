@@ -5,7 +5,9 @@ import pytest
 from tests.conftest import create_test_auth_headers_for_user
 
 
-async def test_update_user(client, create_user_in_database, get_user_from_database):
+async def test_update_user(client,
+                           create_user_in_database,
+                           get_user_from_database):
     user_data = {
         "id": 1,
         "username": "Serega",
@@ -14,6 +16,7 @@ async def test_update_user(client, create_user_in_database, get_user_from_databa
         "hashed_password": "SampleHashedPass",
         "is_admin": False,
         "is_superuser": False,
+        "is_verified_email": False,
     }
     user_data_updated = {
         "username": "Maksim",
@@ -35,6 +38,7 @@ async def test_update_user(client, create_user_in_database, get_user_from_databa
     assert user_from_db["is_active"] is user_data["is_active"]
     assert user_from_db["is_admin"] is user_data["is_admin"]
     assert user_from_db["is_superuser"] is user_data["is_superuser"]
+    assert user_from_db["is_verified_email"] is user_data["is_verified_email"]
     assert user_from_db["id"] == user_data["id"]
 
 
@@ -47,6 +51,7 @@ async def test_update_user_not_found_error(client, create_user_in_database):
         "hashed_password": "SampleHashedPass",
         "is_admin": False,
         "is_superuser": False,
+        "is_verified_email": False,
     }
     user_data_updated = {
         "username": "Maksim",
@@ -91,6 +96,7 @@ async def test_update_user_duplicate_data_error(client,
         "hashed_password": "SampleHashedPass",
         "is_admin": False,
         "is_superuser": False,
+        "is_verified_email": False,
     }
     user_data2 = {
         "id": 2,
@@ -100,6 +106,7 @@ async def test_update_user_duplicate_data_error(client,
         "hashed_password": "SampleHashedPass",
         "is_admin": True,
         "is_superuser": False,
+        "is_verified_email": False,
     }
     user_data_updated = {
         string_to_update: user_data2[string_to_update],

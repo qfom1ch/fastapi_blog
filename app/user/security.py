@@ -8,12 +8,27 @@ from passlib.context import CryptContext
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette import status
 
-from app.user.services import _get_user_by_username
+from app.user.models import User
 from config import ACCESS_TOKEN_EXPIRE_MINUTES, ALGORITHM, SECRET_KEY
 from db.session import get_db
 
+from .services import _get_user_by_username
+
 pwd_context: Any = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme: Any = OAuth2PasswordBearer(tokenUrl="/users/token")
+
+
+
+
+async def verify_token(token: str, db_session: AsyncSession) -> User:
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        username = payload.get("sub")
+        user = await _get_user_by_username(username, db_session)
+    except JWTError:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+                            detail="Invalid token")
+    return user
 
 
 def get_hash_password(password: str) -> Any:

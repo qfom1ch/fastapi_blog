@@ -18,6 +18,7 @@ async def test_update_post(client,
         "hashed_password": "SampleHashedPass",
         "is_admin": False,
         "is_superuser": False,
+        "is_verified_email": False,
     }
     post_data = {
         "id": 1,
@@ -49,7 +50,8 @@ async def test_update_post(client,
     assert post_from_db["author_id"] == user_data["id"]
     assert post_from_db["title"] == post_data_updated["title"]
     assert post_from_db["text"] == post_data_updated["text"]
-    assert post_from_db["short_description"] == post_data_updated["short_description"]
+    assert post_from_db["short_description"] == \
+           post_data_updated["short_description"]
     assert post_from_db["slug"] == slugify(post_data_updated["title"])
 
 
@@ -65,6 +67,7 @@ async def test_update_post_not_found_error(client,
         "hashed_password": "SampleHashedPass",
         "is_admin": False,
         "is_superuser": False,
+        "is_verified_email": False,
     }
     post_data = {
         "id": 1,

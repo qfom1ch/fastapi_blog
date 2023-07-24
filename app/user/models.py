@@ -13,3 +13,4 @@ class User(Base):
     hashed_password: str = Column(String, nullable=False)
     is_admin: bool = Column(Boolean, default=False, nullable=False)
     is_superuser: bool = Column(Boolean, default=False, nullable=False)
+    is_verified_email: bool = Column(Boolean, default=False, nullable=False)
