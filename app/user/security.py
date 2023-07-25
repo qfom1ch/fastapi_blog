@@ -18,8 +18,6 @@ pwd_context: Any = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme: Any = OAuth2PasswordBearer(tokenUrl="/users/token")
 
 
-
-
 async def verify_token(token: str, db_session: AsyncSession) -> User:
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])

@@ -5,8 +5,8 @@ from email.message import EmailMessage
 from celery import Celery
 
 from app.user import security
-from config import (ACCESS_TOKEN_EXPIRE_MINUTES, REDIS_HOST, REDIS_PORT,
-                    SMTP_HOST, SMTP_PASSWORD, SMTP_PORT, SMTP_USER)
+from config import (ACCESS_TOKEN_EXPIRE_MINUTES, APP_PORT, REDIS_HOST,
+                    REDIS_PORT, SMTP_HOST, SMTP_PASSWORD, SMTP_PORT, SMTP_USER)
 
 celery = Celery('tasks', broker=f'redis://{REDIS_HOST}:{REDIS_PORT}')
 
@@ -27,7 +27,7 @@ def setup_email_for_verification(username: str, user_email: str):
         '<div>'
         f'<h1 style="color: green;">Здравствуйте, {username}, подтвердите ваш '
         f'электронный адрес: '
-        f'http://0.0.0.0:8000/users/verification_email/?token='
+        f'http://0.0.0.0:{APP_PORT}/users/verification_email/?token='
         f'{verification_token}😊</h1>'
         '-management-dashboard-ui-design-template-suitable-designing'
         '-application-for-android-and-ios-clean-style-app'

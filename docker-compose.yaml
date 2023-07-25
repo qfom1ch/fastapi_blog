@@ -1,0 +1,52 @@
+version: "3.0"
+services:
+  db:
+    image: postgres:14.1-alpine
+    container_name: db_blog
+    env_file:
+      - .env.example
+    ports:
+      - 5732:5432
+
+  redis:
+    image: redis:6.0.16-alpine
+    container_name: redis_blog
+    command: --port 5479
+    expose:
+      - 5479
+
+  blog_app:
+    build:
+      context: .
+    env_file:
+      - .env.example
+    container_name: fastapi_blog
+    command: ['/fastapi_blog/docker/start_app.sh']
+    ports:
+      - 8001:8000
+    depends_on:
+      - db
+      - redis
+
+  celery:
+    build:
+      context: .
+    env_file:
+      - .env.example
+    container_name: celery_blog
+    command: ['/fastapi_blog/docker/celery.sh', 'celery']
+    depends_on:
+      - redis
+
+  flower:
+    build:
+      context: .
+    env_file:
+      - .env.example
+    container_name: flower_blog
+    command: ['/fastapi_blog/docker/celery.sh', 'flower']
+    depends_on:
+      - redis
+      - celery
+    ports:
+      - 7777:5555

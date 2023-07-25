@@ -5,6 +5,7 @@ exclude =
   .hg
   .svn
   .tox
+  .env
   CVS
   .venv*/
   venv*/

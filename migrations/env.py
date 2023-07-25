@@ -3,10 +3,16 @@ from logging.config import fileConfig
 from alembic import context
 from sqlalchemy import engine_from_config, pool
 
+from config import REAL_DATABASE_URL_ALEMBIC
+
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
 
+section = config.config_ini_section
+config.set_section_option(section,
+                          'REAL_DATABASE_URL_ALEMBIC',
+                          REAL_DATABASE_URL_ALEMBIC)
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
 if config.config_file_name is not None:
