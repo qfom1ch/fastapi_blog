@@ -1,4 +1,4 @@
-from app.blog.models import Post
-from app.user.models import User
+from apps.post.models import Post
+from apps.user.models import User
 
 from .session import Base

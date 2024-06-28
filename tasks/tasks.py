@@ -4,7 +4,7 @@ from email.message import EmailMessage
 
 from celery import Celery
 
-from app.user import security
+from apps.user import security
 from config import (ACCESS_TOKEN_EXPIRE_MINUTES, APP_PORT, REDIS_HOST,
                     REDIS_PORT, SMTP_HOST, SMTP_PASSWORD, SMTP_PORT, SMTP_USER)
 
@@ -30,7 +30,7 @@ def setup_email_for_verification(username: str, user_email: str):
         f'http://0.0.0.0:{APP_PORT}/users/verification_email/?token='
         f'{verification_token}😊</h1>'
         '-management-dashboard-ui-design-template-suitable-designing'
-        '-application-for-android-and-ios-clean-style-app'
+        '-application-for-android-and-ios-clean-style-apps'
         '-mobile-free-vector.jpg" width="600">'
         '</div>',
         subtype='html'

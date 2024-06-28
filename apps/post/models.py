@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from sqlalchemy import TIMESTAMP, Integer, String
+from sqlalchemy.orm import relationship
 from sqlalchemy.sql.schema import Column, ForeignKey
 
 from db.session import Base
@@ -18,3 +19,5 @@ class Post(Base):
     published_at: datetime = Column(
         TIMESTAMP(timezone=True), default=datetime.now()
     )
+
+    author = relationship("User", back_populates="posts")

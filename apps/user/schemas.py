@@ -1,5 +1,20 @@
+from typing import Any
+
 from fastapi import HTTPException, status
 from pydantic import BaseModel, ConfigDict, EmailStr, field_validator
+
+
+class User(BaseModel):
+    id: int
+    username: str
+    email: EmailStr
+    is_active: bool
+    is_admin: bool
+    is_superuser: bool
+    is_verified_email: bool
+    hashed_password: str
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ShowUser(BaseModel):
@@ -58,12 +73,13 @@ class UpdatedUserResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
-class DeleteUserResponse(BaseModel):
-    deleted_user_id: int
-
-    model_config = ConfigDict(from_attributes=True)
-
-
 class Token(BaseModel):
     access_token: str
     token_type: str
+
+
+class UserServiceResult(BaseModel):
+    success: bool
+    status_code: int
+    detail: str = None
+    data: Any = None

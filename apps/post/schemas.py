@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, field_validator
 
@@ -56,3 +57,10 @@ class UpdatedPostResponse(BaseModel):
     short_description: str
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class PostServiceResult(BaseModel):
+    success: bool
+    status_code: int
+    detail: str = None
+    data: Any = None

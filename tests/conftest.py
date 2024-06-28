@@ -9,7 +9,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql import text
 from starlette.testclient import TestClient
 
-from app.user.security import create_access_token
+from apps.user.security import create_access_token
 from config import ACCESS_TOKEN_EXPIRE_MINUTES, TEST_DATABASE_URL
 from db.session import Base, get_db
 from main import app

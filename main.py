@@ -5,8 +5,8 @@ from fastapi_cache.backends.redis import RedisBackend
 from fastapi_pagination import add_pagination
 from redis import asyncio as aioredis
 
-from app.blog.routers import post_router
-from app.user.routers import user_router
+from apps.post.routers import post_router
+from apps.user.routers import user_router
 from config import APP_PORT, REDIS_HOST, REDIS_PORT
 
 app = FastAPI(title='blog_app')
